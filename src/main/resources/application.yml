@@ -1,0 +1,27 @@
+server:
+  port: 8080  # 기본 포트 (Nginx가 여러 개의 인스턴스를 관리할 경우 개별적으로 포트를 설정)
+
+spring:
+  kafka:
+    bootstrap-servers: kafka:9092  # Kafka 서버 주소
+    consumer:
+      group-id: kafka-group
+      auto-offset-reset: earliest  # 가장 오래된 메시지부터 읽기
+    producer:
+      acks: all  # 메시지가 정상적으로 수신되었을 때만 확인
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/board_db
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 1234
+  jpa:
+    hibernate:
+      ddl-auto: update  # 테이블 자동 생성
+    show-sql: true
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+
+logging:
+  level:
+    root: info
+    org.springframework.kafka: debug  # Kafka 디버깅 로그 활성화
