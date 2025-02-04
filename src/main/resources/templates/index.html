@@ -3,16 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kafka Message Producer</title>
+    <title>Kafka WebSocket Chat</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        .chat-container {
+            width: 400px;
+            margin: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        .message {
+            padding: 5px 10px;
+            border-radius: 10px;
+            margin: 5px;
+            max-width: 70%;
+        }
+        .my-message {
+            align-self: flex-end;
+            background-color: #dcf8c6;
+        }
+        .other-message {
+            align-self: flex-start;
+            background-color: #f1f0f0;
+        }
+    </style>
 </head>
 <body>
-<h1>Kafka Message Producer</h1>
-<form action="/send" method="post">
-    <input type="text" name="message" placeholder="Enter message" required>
-    <button type="submit">Send</button>
-</form>
 
-<h2>Last Sent Message:</h2>
-<p th:text="${sentMessage}"></p>
+<h1>Kafka WebSocket Chat</h1>
+
+<!-- ✅ 사용자 ID 입력 -->
+<label for="senderId">Your ID:</label>
+<input type="text" id="senderId" value="user1" required>
+<br>
+
+<!-- ✅ 채팅방 ID 입력 -->
+<label for="chatroomId">Chatroom ID:</label>
+<input type="text" id="chatroomId" value="123" required>
+<br>
+
+<!-- ✅ 메시지 입력 폼 -->
+<input type="text" id="messageInput" placeholder="Enter message" required>
+<button onclick="sendMessage()">Send</button>
+
+<!-- ✅ 채팅 메시지를 표시할 영역 -->
+<h2>Messages:</h2>
+<div class="chat-container" id="messageContainer"></div>
+
+<script>
+    let stompClient = null;
+    let senderId = document.getElementById("senderId").value;
+    let chatroomId = document.getElementById("chatroomId").value;
+
+    // ✅ WebSocket 연결 설정
+    function connect() {
+        let socket = new SockJS('/ws');  // Spring Boot에서 설정한 WebSocket 엔드포인트
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function (frame) {
+            console.log('✅ [WebSocket] Connected: ' + frame);
+
+            stompClient.subscribe(`/topic/chat/${chatroomId}`, function (message) {
+                console.log("📡 [WebSocket] Received message:", message.body);
+                let msg = JSON.parse(message.body);
+                showMessage(msg);
+            });
+
+        }, function (error) {
+            console.error("❌ [WebSocket] Connection Error:", error);
+        });
+    }
+
+    // ✅ 메시지 전송 함수
+    function sendMessage() {
+        let messageContent = document.getElementById("messageInput").value;
+        senderId = document.getElementById("senderId").value;
+        chatroomId = document.getElementById("chatroomId").value;
+
+        if (stompClient && messageContent.trim() !== "") {
+            let message = {
+                sender: senderId,
+                content: messageContent,
+                chatroomId: chatroomId
+
+            };
+
+            console.log("🚀 [WebSocket] Sending message:", message);
+
+            stompClient.send(`/api/v1/chat/sendMessage`, {}, JSON.stringify(message));
+            document.getElementById("messageInput").value = "";
+        } else {
+            console.error("❌ [WebSocket] Stomp client not connected or empty message.");
+        }
+    }
+
+    // ✅ 화면에 메시지 추가
+    function showMessage(message) {
+        let messageContainer = document.getElementById("messageContainer");
+        let newMessage = document.createElement("div");
+
+        newMessage.textContent = `${message.senderId}: ${message.content}`;
+        newMessage.classList.add("message");
+
+        // ✅ 본인이 보낸 메시지와 받은 메시지 구분
+        if (message.senderId === senderId) {
+            newMessage.classList.add("my-message");
+        } else {
+            newMessage.classList.add("other-message");
+        }
+
+        messageContainer.appendChild(newMessage);
+        messageContainer.scrollTop = messageContainer.scrollHeight; // 자동 스크롤
+    }
+
+    // ✅ 페이지 로드 시 WebSocket 연결
+    connect();
+</script>
+
 </body>
 </html>

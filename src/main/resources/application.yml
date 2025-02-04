@@ -2,16 +2,29 @@ server:
   port: 8080  # 기본 포트 (Nginx가 여러 개의 인스턴스를 관리할 경우 개별적으로 포트를 설정)
 
 spring:
+#  web:
+#    resources:
+#      static-locations: file:/app/resources/static/
+  data:
+    mongodb:
+      uri: mongodb://host.docker.internal:27017/chatDB
+      database: chatDB
   kafka:
     bootstrap-servers: kafka:9092  # Kafka 서버 주소
     consumer:
-      group-id: kafka-group
+      group-id: kafka-group-new
       auto-offset-reset: earliest  # 가장 오래된 메시지부터 읽기
+      properties:
+        spring.json.trusted.packages: "*"  # 모든 패키지의 DTO를 신뢰함
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
     producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       acks: all  # 메시지가 정상적으로 수신되었을 때만 확인
 
   datasource:
-    url: jdbc:mysql://localhost:3306/board_db
+    url: jdbc:mysql://host.docker.internal:3306/sys  # ✅ localhost 대신 127.0.0.1 사용
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password: 1234

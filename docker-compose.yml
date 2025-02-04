@@ -2,6 +2,18 @@ networks:
   my_network:
     driver: bridge
 services:
+#  mongodb:
+#    image: mongo:latest
+#    container_name: mongodb
+#    restart: always
+#    ports:
+#      - "27017:27017"  # 호스트의 27017 포트를 컨테이너의 27017에 매핑
+#    environment:
+#      MONGO_INITDB_ROOT_USERNAME: root  # MongoDB의 기본 관리자 계정
+#      MONGO_INITDB_ROOT_PASSWORD: rootpassword  # 관리자 계정 비밀번호
+#    volumes:
+#      - mongo_data:/data/db  # 데이터를 로컬 볼륨에 저장
+
   # Kafka (Zookeeper 없이 KRaft 모드 실행)
   kafka:
     image: confluentinc/cp-kafka:latest
@@ -11,17 +23,22 @@ services:
       - "9093:9093"
     environment:
       KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: controller,broker
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_PROCESS_ROLES: controller,broker # zookeeper없이 Kafka만으로 컨트롤하려면 controller가 필수이다.
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093 # Controller 후보 지정 -> 브로커 1번이 9093포트에서 컨트롤러역할 수행
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LOG_DIRS: /var/lib/kafka/data
+
+      #	 클라이언트(Publisher, Consumer) → 9092에서 접속
+      #	 Kafka 브로커 내부 통신(컨트롤러) → 9093에서 통신
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093
+
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092 # Kafka 브로커가 외부에서 접근할 수 있도록 9092 포트 광고
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT # Kafka 브로커 간 통신을 PLAINTEXT(암호화 X) 방식으로 설정
+      KAFKA_LOG_DIRS: /var/lib/kafka/data # Kafka의 데이터를 저장할 디렉토리 지정 (/var/lib/kafka/data)
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      # docker exec -it kafka kafka-topics --bootstrap-server kafka:9092 --create --topic test-topic --partitions 3 --replication-factor 1
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      CLUSTER_ID: X_tpfbxmSoqw8cU-BYoVJA
-      KAFKA_DELETE_TOPIC_ENABLE: "true"  # ✅ Kafka에서 토픽 삭제 허용
+      CLUSTER_ID: X_tpfbxmSoqw8cU-BYoVJA # ClusterID생성 docker exec -it kafka kafka-storage random-uuid, KRaft모드에서는 필수
+      KAFKA_DELETE_TOPIC_ENABLE: "true"  # Kafka에서 토픽 삭제 허용
     networks:
       - my_network
 
@@ -52,10 +69,16 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/sys
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=1234
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - kafka
     networks:
       - my_network
+
   # Spring Boot 서비스 2
   springboot2:
     build:
@@ -67,7 +90,15 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/sys
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=1234
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - kafka
     networks:
       - my_network
+
+volumes:
+  mongo_data:
