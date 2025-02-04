@@ -61,7 +61,7 @@
     let chatroomId = document.getElementById("chatroomId").value;
 
     // ✅ WebSocket 연결 설정
-    function connect() {
+    function connect(retryCount = 3) {
         let socket = new SockJS('/ws');  // Spring Boot에서 설정한 WebSocket 엔드포인트
         stompClient = Stomp.over(socket);
 
@@ -76,6 +76,12 @@
 
         }, function (error) {
             console.error("❌ [WebSocket] Connection Error:", error);
+            if (retryCount > 0) {
+                console.log(`🔄 [WebSocket] Retrying connection... (${retryCount} attempts left)`);
+                setTimeout(() => connect(retryCount - 1), 3000);  // 3초 후 재시도
+            } else {
+                console.error("❌ [WebSocket] Connection failed after multiple attempts.");
+            }
         });
     }
 
@@ -107,11 +113,11 @@
         let messageContainer = document.getElementById("messageContainer");
         let newMessage = document.createElement("div");
 
-        newMessage.textContent = `${message.senderId}: ${message.content}`;
+        newMessage.textContent = `${message.sender}: ${message.content}`;
         newMessage.classList.add("message");
 
         // ✅ 본인이 보낸 메시지와 받은 메시지 구분
-        if (message.senderId === senderId) {
+        if (message.sender === senderId) {
             newMessage.classList.add("my-message");
         } else {
             newMessage.classList.add("other-message");
