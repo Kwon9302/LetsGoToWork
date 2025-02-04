@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 public class KafkaConsumer {
     private final SimpMessagingTemplate simpMessagingTemplate;
 
-    @KafkaListener(topics = "test-topic", groupId = "kafka-group-new", concurrency = "3") // 스레드 수
+    @KafkaListener(topics = "test-topic", groupId = "#{T(java.util.UUID).randomUUID().toString()}", concurrency = "3") // 스레드 수
     public void consumeMessage(@Payload ChatRequestDTO message) {
         log.info("Received message: " + message);
 
