@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(collation = "chat_messages")
+@Document(collection = "chatEntity")
 @Builder
 public class ChatEntity {
     @Id

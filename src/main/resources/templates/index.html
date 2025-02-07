@@ -68,6 +68,9 @@
         stompClient.connect({}, function (frame) {
             console.log('✅ [WebSocket] Connected: ' + frame);
 
+            // ✅ 이전 채팅 기록 불러오기
+            loadChatHistory();
+
             stompClient.subscribe(`/topic/chat/${chatroomId}`, function (message) {
                 console.log("📡 [WebSocket] Received message:", message.body);
                 let msg = JSON.parse(message.body);
@@ -125,6 +128,21 @@
 
         messageContainer.appendChild(newMessage);
         messageContainer.scrollTop = messageContainer.scrollHeight; // 자동 스크롤
+    }
+
+    function loadChatHistory() {
+        fetch(`/history/${chatroomId}`)  // ✅ 올바른 API 경로로 수정
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(messages => {
+                console.log("📜 [WebSocket] Fetched chat history:", messages);
+                messages.forEach(showMessage);  // ✅ 이전 메시지를 채팅창에 추가
+            })
+            .catch(error => console.error("❌ [WebSocket] Failed to load chat history:", error));
     }
 
     // ✅ 페이지 로드 시 WebSocket 연결
