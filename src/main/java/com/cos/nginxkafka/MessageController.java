@@ -1,12 +1,9 @@
 package com.cos.nginxkafka;
 
-import com.cos.nginxkafka.mongoEntity.ChatEntity;
 import com.cos.nginxkafka.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-
-import java.util.List;
 
 @Controller
 @RequiredArgsConstructor

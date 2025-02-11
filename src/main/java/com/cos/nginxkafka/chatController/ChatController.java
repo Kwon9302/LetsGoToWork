@@ -1,18 +1,18 @@
 package com.cos.nginxkafka.chatController;
 
-import com.cos.nginxkafka.KafkaConsumer;
 import com.cos.nginxkafka.KafkaProducer;
 import com.cos.nginxkafka.dto.ChatRequestDTO;
 import com.cos.nginxkafka.jpaService.ChatServiceJpa;
-import com.cos.nginxkafka.mongoEntity.ChatEntity;
+import com.cos.nginxkafka.mongoDomain.ChatMessage;
 import com.cos.nginxkafka.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.Message;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,15 +32,27 @@ public class ChatController {
 
         String topic = "test-topic";
         kafkaProducer.sendMessage(topic, message.getContent(), message.getSender(), message.getChatroomId());
-        chatService.save(message); // MongoDB 저장
-        chatServiceJpa.save(message); // MySQL 저장
+            chatService.addMessage(message); // MongoDB 저장
+            chatServiceJpa.save(message); // MySQL 저장
     }
 
-    @GetMapping("/history/{chatroomId}")
-    public ResponseEntity<List<ChatRequestDTO>> getChatHistory(@PathVariable String chatroomId) {
+    @GetMapping("/history/{chatroomId}") // mongo에서 불러오기
+    public ResponseEntity<Page<ChatMessage>> getChatHistory(@PathVariable String chatroomId,@RequestParam(defaultValue = "0") int page,
+                                                               @RequestParam(defaultValue = "400000") int size) {
         log.info("📜 [ChatController] Fetching chat history for chatroomId={}", chatroomId);
 
-        List<ChatRequestDTO> chatHistory = chatService.findByChatroomId(chatroomId);
+        // 예시: timestamp 기준 내림차순 정렬 (최신 메시지가 먼저 나오도록)
+        PageRequest pageable = PageRequest.of(page, size, Sort.by("timestamp").descending());
+        Page<ChatMessage> messages = chatService.getMessages(chatroomId, pageable);
+        return ResponseEntity.ok(messages);
+
+    }
+
+    @GetMapping("/history2/{chatroomId}") // mysql에서 불러오기
+    public ResponseEntity<List<ChatRequestDTO>> getChatHistory2(@PathVariable String chatroomId) {
+//        log.info("📜 [ChatController] Fetching chat history for chatroomId={}", chatroomId);
+
+        List<ChatRequestDTO> chatHistory = chatServiceJpa.findByChatroomId(chatroomId);
 
         if (chatHistory == null || chatHistory.isEmpty()) {
             log.warn("⚠️ [ChatController] No chat history found for chatroomId={}", chatroomId);
@@ -49,5 +61,4 @@ public class ChatController {
 
         return ResponseEntity.ok(chatHistory);
     }
-
 }

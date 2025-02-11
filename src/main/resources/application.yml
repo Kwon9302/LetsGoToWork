@@ -2,11 +2,11 @@ server:
   port: 8080  # 기본 포트 (Nginx가 여러 개의 인스턴스를 관리할 경우 개별적으로 포트를 설정)
 
 spring:
-#  web:
-#    resources:
-#      static-locations: file:/app/resources/static/
   data:
     mongodb:
+      auto-index-creation: true
+      connection-pool-size: 100
+#      max-connection-idle-time: 60000
       uri: mongodb://host.docker.internal:27017/chatDB
       database: chatDB
   kafka:
