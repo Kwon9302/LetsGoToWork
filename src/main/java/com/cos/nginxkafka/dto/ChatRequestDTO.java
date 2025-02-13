@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class ChatRequestDTO {
-
     private String chatroomId;
     private String sender;
     private String content;
