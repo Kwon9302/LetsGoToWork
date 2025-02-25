@@ -1,6 +1,5 @@
 package com.cos.nginxkafka;
 
-import com.cos.nginxkafka.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,7 +7,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 @RequiredArgsConstructor
 public class MessageController {
-    private ChatService chatService;
 
     @GetMapping("/")
     public String index() {
@@ -16,4 +14,14 @@ public class MessageController {
         return "index";
     }
 
+    @GetMapping("/disconnected")
+    public String disconnected() {
+        return "disconnected";
+    }
+
+    @GetMapping("/search")
+    public String searchPage() {
+
+        return "search";
+    }
 }

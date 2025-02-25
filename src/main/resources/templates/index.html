@@ -38,11 +38,22 @@
             padding: 5px 10px;
             cursor: pointer;
         }
+        /* Disconnect 버튼 스타일 */
+        #disconnectButton {
+            display: block;
+            margin: 10px auto;
+            padding: 5px 10px;
+            cursor: pointer;
+            background-color: #f44336;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
 
-<h1>Kafka WebSocket Chat</h1>
+<h1>Let's Chatting</h1>
 
 <!-- ✅ 사용자 ID 입력 -->
 <label for="senderId">Your ID:</label>
@@ -56,14 +67,26 @@
 
 <!-- ✅ 메시지 입력 폼 -->
 <input type="text" id="messageInput" placeholder="Enter message" required>
-<button id="sendButton">Send</button>
+<button id="sendButton" onclick="sendMessage()">Send</button>
 
 <!-- ✅ Load More 버튼 (이전 메시지 불러오기) -->
 <button id="loadMoreButton" onclick="loadOlderMessages()">Load More</button>
 
+<!-- ✅ Disconnect 버튼 (WebSocket 연결 해제) -->
+<button id="disconnectButton" onclick="disconnectWebSocket()">Disconnect</button>
+
 <!-- ✅ 채팅 메시지를 표시할 영역 -->
 <h2>Messages:</h2>
 <div class="chat-container" id="messageContainer"></div>
+
+<button onclick="window.location.href='/search'">Go to Search</button>
+
+<!-- ✅ 파일 선택 및 업로드 버튼 -->
+<input type="file" id="fileInput" style="display: none;" onchange="uploadFile()" />
+<button id="fileUploadButton" onclick="document.getElementById('fileInput').click();">
+    Upload File
+</button>
+
 
 <script>
     document.getElementById("messageInput").addEventListener("keydown", function(event) {
@@ -79,7 +102,7 @@
 
     // 페이징 관련 변수
     let currentPage = 0;
-    const pageSize = 400000;
+    const pageSize = 50;
     let totalPages = 1; // 서버로부터 받은 totalPages 값으로 업데이트
 
     // ✅ WebSocket 연결 설정
@@ -131,18 +154,37 @@
         }
     }
 
-    // ✅ 신규 메시지를 화면에 추가 (하단에 append)
+    // 메시지 표시 함수 수정
     function showMessage(message) {
         let messageContainer = document.getElementById("messageContainer");
         let newMessage = document.createElement("div");
-        newMessage.textContent = `${message.sender}: ${message.content}`;
         newMessage.classList.add("message");
+
         if (message.sender === senderId) {
             newMessage.classList.add("my-message");
         } else {
             newMessage.classList.add("other-message");
         }
+
+        // 파일 메시지인 경우
+        if (message.content.startsWith("[파일]")) {
+            let fileName = message.content.replace("[파일] ", "");
+            newMessage.innerHTML = `
+                ${message.sender}:
+                <a href="#" class="file-link" onclick="downloadFile(event, '${fileName}')">
+                    📎 ${fileName}
+                </a>
+                <span class="timestamp">${formatTimestamp(message.timestamp)}</span>
+            `;
+        } else {
+            newMessage.innerHTML = `
+                ${message.sender}: ${message.content}
+                <span class="timestamp">${formatTimestamp(message.timestamp)}</span>
+            `;
+        }
+
         messageContainer.appendChild(newMessage);
+        scrollToBottom();
     }
 
     // ✅ 이전 메시지를 화면 상단에 추가 (prepend)
@@ -168,38 +210,27 @@
     // ✅ 채팅 기록을 페이징으로 불러오는 함수
     function loadChatHistory(page) {
         fetch(`/history/${chatroomId}?page=${page}&size=${pageSize}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                // data가 페이징 객체일 경우, content 배열과 totalPages 값이 포함됨
                 let messages = data.content;
-                // API가 내림차순(최신 메시지가 먼저)으로 정렬했다면, 사용자에게는 올바른 순서(오래된 메시지가 위)에 맞게 표시하기 위해 reverse
-                messages = messages.reverse();
 
                 if (page === 0) {
-                    // 초기 로딩 시: 메시지를 순서대로 append하고 하단으로 스크롤
+                    // 초기 로딩 시 최신 메시지가 내려오는 순서대로 append (reverse X)
                     messages.forEach(msg => showMessage(msg));
                     scrollToBottom();
                 } else {
-                    // "Load More" 시: 이전(오래된) 메시지를 상단에 prepend
-                    messages.forEach(msg => prependMessage(msg));
+                    // "Load More" 시: prepend하여 기존 메시지 위에 추가
+                    messages.reverse().forEach(msg => prependMessage(msg));
                 }
 
-                totalPages = data.totalPages;  // 총 페이지 수 업데이트
+                totalPages = data.totalPages;
                 currentPage = page;
 
-                // 더 이상 불러올 페이지가 없으면 "Load More" 버튼 숨김
                 if (currentPage + 1 >= totalPages) {
                     document.getElementById("loadMoreButton").style.display = "none";
-                } else {
-                    document.getElementById("loadMoreButton").style.display = "block";
                 }
             })
-            .catch(error => console.error("❌ [WebSocket] Failed to load chat history:", error));
+            .catch(error => console.error("❌ Failed to load chat history:", error));
     }
 
     // ✅ Load More 버튼 클릭 시 이전 메시지 불러오기 (다음 페이지)
@@ -208,6 +239,87 @@
         if (nextPage < totalPages) {
             loadChatHistory(nextPage);
         }
+    }
+
+    // ✅ WebSocket 연결 해제 후 페이지 이동 함수
+    function disconnectWebSocket() {
+        if (stompClient) {
+            stompClient.disconnect(() => {
+                console.log("웹소켓 연결이 해제되었습니다.");
+                // 연결 해제 후 컨트롤러에서 매핑한 /disconnected 페이지로 이동
+                window.location.href = "/disconnected";
+            });
+        } else {
+            window.location.href = "/disconnected";
+        }
+    }
+    // ✅ 파일 업로드 함수 (파일 제목만 표시, 클릭하면 다운로드)
+    function uploadFile() {
+        let fileInput = document.getElementById("fileInput");
+        let file = fileInput.files[0];
+        let senderId = document.getElementById("senderId").value;
+        let chatroomId = document.getElementById("chatroomId").value;
+
+        if (!file) {
+            alert("파일을 선택해주세요!");
+            return;
+        }
+
+        let formData = new FormData();
+        formData.append("file", file);
+        formData.append("sender", senderId);
+        formData.append("chatroomId", chatroomId);
+        formData.append("content", `[파일] ${file.name}`);
+
+        fetch("/savefile", {
+            method: "POST",
+            body: formData
+        })
+            .then(response => {
+                if (!response.ok) throw new Error("파일 업로드 실패");
+                return response.json();
+            })
+            .then(data => {
+                let message = {
+                    sender: senderId,
+                    chatroomId: chatroomId,
+                    content: `[파일] ${file.name}`,
+                    fileUrl: data.url,
+                    timestamp: data.timestamp
+                };
+
+                stompClient.send("/api/v1/chat/sendMessage", {}, JSON.stringify(message));
+            })
+            .catch(error => {
+                console.error("파일 업로드 실패:", error);
+                alert("파일 업로드에 실패했습니다.");
+            });
+    }
+
+    // 파일 다운로드 처리 함수
+    function downloadFile(event, fileName) {
+        event.preventDefault();
+
+        fetch(`/download?fileName=${encodeURIComponent(fileName)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.url) {
+                    window.location.href = data.url; // 🔹 S3 Presigned URL로 바로 이동하여 다운로드
+                } else {
+                    throw new Error("다운로드 링크 생성 실패");
+                }
+            })
+            .catch(error => {
+                console.error("파일 다운로드 실패:", error);
+                alert("파일 다운로드에 실패했습니다.");
+            });
+    }
+
+    // 시간 포맷팅 함수
+    function formatTimestamp(timestamp) {
+        if (!timestamp) return '';
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString();
     }
 
     // ✅ 페이지 로드 시 WebSocket 연결

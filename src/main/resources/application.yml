@@ -2,6 +2,14 @@ server:
   port: 8080  # 기본 포트 (Nginx가 여러 개의 인스턴스를 관리할 경우 개별적으로 포트를 설정)
 
 spring:
+  thymeleaf:
+    prefix: classpath:/templates/   # ✅ Thymeleaf 템플릿 위치 지정
+    suffix: .html
+    check-template-location: true
+
+  profiles:
+    active: prod  # 운영 환경에서는 prod 설정 사용
+
   data:
     mongodb:
       auto-index-creation: true
@@ -9,6 +17,10 @@ spring:
 #      max-connection-idle-time: 60000
       uri: mongodb://host.docker.internal:27017/chatDB
       database: chatDB
+
+  elasticsearch:
+    uris: http://elasticsearch:9200
+
   kafka:
     bootstrap-servers: kafka:9092  # Kafka 서버 주소
     consumer:
@@ -37,4 +49,4 @@ spring:
 logging:
   level:
     root: info
-    org.springframework.kafka: debug  # Kafka 디버깅 로그 활성화
+    org.springframework.kafka: info  # Kafka 디버깅 로그 활성화(info단계 출력)

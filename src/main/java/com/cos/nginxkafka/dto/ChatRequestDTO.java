@@ -15,4 +15,5 @@ public class ChatRequestDTO {
     private String chatroomId;
     private String sender;
     private String content;
+    private LocalDateTime timestamp;
 }
