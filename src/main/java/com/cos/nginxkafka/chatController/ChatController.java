@@ -81,32 +81,4 @@ public class ChatController {
         return ResponseEntity.ok(results);
     }
 
-    @PostMapping("/savefile")
-    public ResponseEntity<Map<String, String>> handleFileUpload(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("sender") String sender,
-            @RequestParam("chatroomId") String chatroomId,
-            @RequestParam("content") String content) {
-        try {
-            ChatRequestDTO chatRequestDTO = ChatRequestDTO.builder()
-                    .sender(sender)
-                    .chatroomId(chatroomId)
-                    .content(content)
-                    .timestamp(LocalDateTime.now())  // 시간 추가
-                    .build();
-
-            String fileUrl = chatService.saveFile(chatRequestDTO, file);
-
-            Map<String, String> response = new HashMap<>();
-            response.put("url", "/download?fileName=" + fileUrl);
-            response.put("timestamp", chatRequestDTO.getTimestamp().toString());
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("파일 업로드 실패", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-
 }

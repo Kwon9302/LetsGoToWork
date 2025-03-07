@@ -1,17 +1,16 @@
 package com.cos.nginxkafka.jpaEntity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Builder
+@Table(indexes = {
+        @Index(name = "idx_chatroom_created_at", columnList = "chatroomId")
+})
 public class ChatJPAEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

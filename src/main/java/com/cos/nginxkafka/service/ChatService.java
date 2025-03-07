@@ -18,8 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -61,8 +59,9 @@ public class ChatService {
                 .fileUrl(null)
                 .build();
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 //        String time = LocalDateTime.now().format(formatter);
+
         // ES 추가 저장
         ChatMessageIndex indexMessage = new ChatMessageIndex().builder()
                 .sender(chatRequestDTO.getSender())
@@ -114,7 +113,7 @@ public class ChatService {
      * @param chatRequestDTO
      * @param file
      */
-    public String saveFile(ChatRequestDTO chatRequestDTO,MultipartFile file) {
+    public String saveFile(ChatRequestDTO chatRequestDTO, MultipartFile file) {
         String fileUrl = null;
 
         // 첨부파일이 있으면 S3에 업로드
@@ -138,10 +137,17 @@ public class ChatService {
         return fileUrl;
     }
 
-    /**
-     * ✅ 파일 다운로드 (S3에서 파일 가져오기)
-     */
-    public Resource getFileFromS3(String fileName) {
-        return (Resource) s3Service.downloadFile(fileName);
+    public String getFileDownloadUrl(String fileUrl) {
+        // 1. 📌 DB에서 메시지 조회 (파일명 포함)
+        ChatMessage chatMessage = chatMessageRepository.findByFileUrl(fileUrl);
+
+        // 2. 📌 파일명이 없으면 예외 발생
+        if (chatMessage.getFileUrl() == null) {
+            throw new RuntimeException("파일이 첨부되지 않은 메시지입니다.");
+        }
+
+        // 3. 📌 S3 Presigned URL 생성
+        return s3Service.generatePresignedUrl(chatMessage.getFileUrl());
     }
+
 }

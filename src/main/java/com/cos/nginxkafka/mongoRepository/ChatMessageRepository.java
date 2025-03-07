@@ -9,4 +9,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ChatMessageRepository extends MongoRepository<ChatMessage, String> {
     Page<ChatMessage> findByChatroomId(String chatroomId, Pageable pageable);
+    ChatMessage findByFileUrl(String fileUrl);
+
 }

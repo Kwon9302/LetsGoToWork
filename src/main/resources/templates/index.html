@@ -140,14 +140,19 @@
         chatroomId = document.getElementById("chatroomId").value;
 
         if (stompClient && messageContent.trim() !== "") {
+            let now = new Date(); // ✅ 현재 시간 추가
+            let timestamp = now.toISOString(); // ✅ ISO 형식 (서버에서도 일관성 유지)
+
             let message = {
                 sender: senderId,
                 content: messageContent,
-                chatroomId: chatroomId
+                chatroomId: chatroomId,
+                timestamp: timestamp  // ✅ 서버에 전송할 때 시간 포함
             };
 
             console.log("🚀 [WebSocket] Sending message:", message);
             stompClient.send(`/api/v1/chat/sendMessage`, {}, JSON.stringify(message));
+
             document.getElementById("messageInput").value = "";
         } else {
             console.error("❌ [WebSocket] Stomp client not connected or empty message.");
@@ -166,39 +171,27 @@
             newMessage.classList.add("other-message");
         }
 
-        // 파일 메시지인 경우
-        if (message.content.startsWith("[파일]")) {
+        // ✅ 시간 표시 (오른쪽 아래 작은 글씨)
+        let timestamp = message.timestamp ? formatTimestamp(message.timestamp) : "";
+        let timestampElement = `<span class="timestamp" style="font-size: 10px; color: gray; margin-left: 8px;">${timestamp}</span>`;
+
+        // ✅ 파일 메시지인 경우
+        if (message.fileUrl) {  // 📌 `fileUrl` 존재 여부 체크
             let fileName = message.content.replace("[파일] ", "");
             newMessage.innerHTML = `
-                ${message.sender}:
-                <a href="#" class="file-link" onclick="downloadFile(event, '${fileName}')">
-                    📎 ${fileName}
-                </a>
-                <span class="timestamp">${formatTimestamp(message.timestamp)}</span>
-            `;
+            ${message.sender}:
+            <a href="${message.fileUrl}" class="file-link" onclick="downloadFile(event, '${message.fileUrl}')">
+                📎 ${fileName}
+            </a> ${timestampElement}
+        `;
         } else {
             newMessage.innerHTML = `
-                ${message.sender}: ${message.content}
-                <span class="timestamp">${formatTimestamp(message.timestamp)}</span>
-            `;
+            ${message.sender}: ${message.content} ${timestampElement}
+        `;
         }
 
         messageContainer.appendChild(newMessage);
         scrollToBottom();
-    }
-
-    // ✅ 이전 메시지를 화면 상단에 추가 (prepend)
-    function prependMessage(message) {
-        let messageContainer = document.getElementById("messageContainer");
-        let newMessage = document.createElement("div");
-        newMessage.textContent = `${message.sender}: ${message.content}`;
-        newMessage.classList.add("message");
-        if (message.sender === senderId) {
-            newMessage.classList.add("my-message");
-        } else {
-            newMessage.classList.add("other-message");
-        }
-        messageContainer.insertBefore(newMessage, messageContainer.firstChild);
     }
 
     // ✅ 스크롤을 채팅창 맨 아래로 이동
@@ -271,7 +264,7 @@
         formData.append("chatroomId", chatroomId);
         formData.append("content", `[파일] ${file.name}`);
 
-        fetch("/savefile", {
+        fetch("/save/file", {
             method: "POST",
             body: formData
         })
@@ -280,12 +273,15 @@
                 return response.json();
             })
             .then(data => {
+                let now = new Date();
+                let timestamp = now.toISOString(); // ✅ 시간 추가 (파일 업로드도 동일한 방식)
+
                 let message = {
                     sender: senderId,
                     chatroomId: chatroomId,
                     content: `[파일] ${file.name}`,
-                    fileUrl: data.url,
-                    timestamp: data.timestamp
+                    fileUrl: data.url, // ✅ Presigned URL이 아닌 S3의 파일 키 (파일 URL) 저장
+                    timestamp: timestamp // ✅ 업로드된 파일 메시지에도 시간 포함
                 };
 
                 stompClient.send("/api/v1/chat/sendMessage", {}, JSON.stringify(message));
@@ -297,14 +293,14 @@
     }
 
     // 파일 다운로드 처리 함수
-    function downloadFile(event, fileName) {
+    function downloadFile(event, fileUrl) {
         event.preventDefault();
 
-        fetch(`/download?fileName=${encodeURIComponent(fileName)}`)
+        fetch(`/download?fileUrl=${encodeURIComponent(fileUrl)}`)
             .then(response => response.json())
             .then(data => {
                 if (data.url) {
-                    window.location.href = data.url; // 🔹 S3 Presigned URL로 바로 이동하여 다운로드
+                    window.location.href = data.url; // ✅ Presigned URL로 바로 이동하여 다운로드
                 } else {
                     throw new Error("다운로드 링크 생성 실패");
                 }
@@ -314,6 +310,41 @@
                 alert("파일 다운로드에 실패했습니다.");
             });
     }
+
+    // ✅ 이전 메시지를 화면 상단에 추가 (역순 정렬 방지)
+    function prependMessage(message) {
+        let messageContainer = document.getElementById("messageContainer");
+        let newMessage = document.createElement("div");
+        newMessage.classList.add("message");
+
+        if (message.sender === senderId) {
+            newMessage.classList.add("my-message");
+        } else {
+            newMessage.classList.add("other-message");
+        }
+
+        // ✅ 시간 추가 (이전 채팅도 동일하게 적용)
+        let timestamp = message.timestamp ? formatTimestamp(message.timestamp) : "";
+        let timestampElement = `<span class="timestamp" style="font-size: 10px; color: gray; margin-left: 8px;">${timestamp}</span>`;
+
+        if (message.content.startsWith("[파일]")) {
+            let fileName = message.content.replace("[파일] ", "");
+            newMessage.innerHTML = `
+            ${message.sender}:
+            <a href="#" class="file-link" onclick="downloadFile(event, '${fileName}')">
+                📎 ${fileName}
+            </a> ${timestampElement}
+        `;
+        } else {
+            newMessage.innerHTML = `
+            ${message.sender}: ${message.content} ${timestampElement}
+        `;
+        }
+
+        // ✅ 과거 메시지는 "맨 위"에 추가하여 순서 유지
+        messageContainer.insertBefore(newMessage, messageContainer.firstChild);
+    }
+
 
     // 시간 포맷팅 함수
     function formatTimestamp(timestamp) {
