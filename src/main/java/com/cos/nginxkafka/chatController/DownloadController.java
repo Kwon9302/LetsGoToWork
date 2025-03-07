@@ -27,9 +27,6 @@ import java.util.Map;
 public class DownloadController {
     private final ChatService chatService;
 
-    @Value("${cloud.aws.s3.bucket-name}")
-    private String bucketName;
-
     /**
      * ✅ 파일 다운로드 API
      */

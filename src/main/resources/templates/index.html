@@ -273,18 +273,7 @@
                 return response.json();
             })
             .then(data => {
-                let now = new Date();
-                let timestamp = now.toISOString(); // ✅ 시간 추가 (파일 업로드도 동일한 방식)
-
-                let message = {
-                    sender: senderId,
-                    chatroomId: chatroomId,
-                    content: `[파일] ${file.name}`,
-                    fileUrl: data.url, // ✅ Presigned URL이 아닌 S3의 파일 키 (파일 URL) 저장
-                    timestamp: timestamp // ✅ 업로드된 파일 메시지에도 시간 포함
-                };
-
-                stompClient.send("/api/v1/chat/sendMessage", {}, JSON.stringify(message));
+                console.log("✅ 파일 업로드 성공, 서버에서 WebSocket으로 메시지 전송됨:", data);
             })
             .catch(error => {
                 console.error("파일 업로드 실패:", error);

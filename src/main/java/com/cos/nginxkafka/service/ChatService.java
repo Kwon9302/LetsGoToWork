@@ -1,5 +1,6 @@
 package com.cos.nginxkafka.service;
 
+import com.cos.nginxkafka.KafkaProducer;
 import com.cos.nginxkafka.es.ChatMessageIndex;
 import com.cos.nginxkafka.dto.ChatRequestDTO;
 import com.cos.nginxkafka.mongoDomain.ChatMessage;
@@ -10,8 +11,10 @@ import com.cos.nginxkafka.mongoRepository.ChatRoomRepository;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,6 +30,7 @@ public class ChatService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final ChatMessageSearchRepository chatMessageSearchRepository;
+    private final KafkaProducer kafkaProducer;
     private final S3Service s3Service;
 
     /**
@@ -113,28 +117,29 @@ public class ChatService {
      * @param chatRequestDTO
      * @param file
      */
-    public String saveFile(ChatRequestDTO chatRequestDTO, MultipartFile file) {
+    public String saveFile(ChatRequestDTO chatRequestDTO, MultipartFile file) throws FileUploadException {
         String fileUrl = null;
 
         // 첨부파일이 있으면 S3에 업로드
         if (file != null && !file.isEmpty()) {
-            try {
                 fileUrl = s3Service.uploadFile(file);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        // 🔹 Builder 패턴을 사용하여 객체 생성
-        ChatMessage chatMessage = ChatMessage.builder()
-                .chatroomId(chatRequestDTO.getChatroomId())
-                .sender(chatRequestDTO.getSender())
-                .content(chatRequestDTO.getContent())
-                .timestamp(LocalDateTime.now())
-                .fileUrl(fileUrl)
-                .build();
 
-        chatMessageRepository.save(chatMessage);
-        return fileUrl;
+                // 🔹 Builder 패턴을 사용하여 객체 생성
+                ChatMessage chatMessage = ChatMessage.builder()
+                        .chatroomId(chatRequestDTO.getChatroomId())
+                        .sender(chatRequestDTO.getSender())
+                        .content(chatRequestDTO.getContent())
+                        .timestamp(LocalDateTime.now())
+                        .fileUrl(fileUrl)
+                        .build();
+
+
+            kafkaProducer.sendMessage("test-topic", chatMessage.getContent(), chatMessage.getSender(), chatMessage.getChatroomId());
+
+                chatMessageRepository.save(chatMessage);
+        }
+                return fileUrl;
+
     }
 
     public String getFileDownloadUrl(String fileUrl) {

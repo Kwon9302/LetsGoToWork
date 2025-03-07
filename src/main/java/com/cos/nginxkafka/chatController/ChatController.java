@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,7 +51,7 @@ public class ChatController {
         log.info("📜 [ChatController] Fetching chat history for chatroomId={}", chatroomId);
 
         // 예시: timestamp 기준 내림차순 정렬 (최신 메시지가 먼저 나오도록)
-        PageRequest pageable = PageRequest.of(page, size, Sort.by("timestamp").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "timestamp"));
         Page<ChatMessage> messages = chatService.getMessages(chatroomId, pageable);
         return ResponseEntity.ok(messages);
     }
