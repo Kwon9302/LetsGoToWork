@@ -106,6 +106,11 @@ public class S3Service {
         }
     }
 
+    /**
+     * 파일이 저장된 S3의 URL 생성
+     * @param fileName
+     * @return
+     */
     public String generatePresignedUrl(String fileName) {
             log.info("🔗 Presigned URL 생성 요청: {}", fileName);
 

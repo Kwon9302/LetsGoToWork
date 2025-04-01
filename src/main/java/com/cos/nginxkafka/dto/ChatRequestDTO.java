@@ -16,4 +16,5 @@ public class ChatRequestDTO {
     private String sender;
     private String content;
     private LocalDateTime timestamp;
+    private String fileUrl;
 }

@@ -1,6 +1,10 @@
 package com.cos.nginxkafka;
 
 import com.cos.nginxkafka.dto.ChatRequestDTO;
+import com.cos.nginxkafka.es.ChatMessageIndex;
+import com.cos.nginxkafka.esRepository.ChatMessageSearchRepository;
+import com.cos.nginxkafka.jpaService.ChatServiceJpa;
+import com.cos.nginxkafka.service.ChatService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,25 +13,49 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.OffsetDateTime;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class KafkaConsumer {
     private final SimpMessagingTemplate simpMessagingTemplate;
+    private final ChatService chatService;
+    private final ChatMessageSearchRepository chatMessageSearchRepository;
 
-    @KafkaListener(topics = "test-topic", groupId = "#{T(java.util.UUID).randomUUID().toString()}", concurrency = "3",
+    /**
+     * 채팅 전송
+     * @param message
+     */
+    @KafkaListener(topics = "test-topic", groupId = "chat-send", concurrency = "3",
             properties = {"max.poll.interval.ms=30000"})
-    public void consumeMessage(@Payload ChatRequestDTO message) {
+    public void consumeEsMessage(@Payload ChatRequestDTO message) {
         log.info("Received message: " + message);
 
-        // JSON 형태로 메시지를 파싱
         try {
-            // 올바른 WebSocket 경로로 메시지 전송 (채팅방 ID 포함)
             String destination = "/topic/chat/" + message.getChatroomId();
-            log.info("Sent message to WebSocket(KafkaListener): " + destination);
             simpMessagingTemplate.convertAndSend(destination, message);
+
         } catch (Exception e) {
             log.error("Error parsing message: ", e);
         }
+    }
+
+    /**
+     * 채팅 저장 Consumer
+     * @param message
+     */
+    @KafkaListener(topics = "test-topic", groupId = "chat-group-save", concurrency = "3")
+    public void consumeMessage(@Payload ChatRequestDTO message) {
+            chatService.addMessage(message);
+        ChatMessageIndex chatMessageIndex = ChatMessageIndex.builder()
+                .chatroomId(message.getChatroomId())
+                .sender(message.getSender())
+                .content(message.getContent())
+                .timestamp(OffsetDateTime.now())
+                .build();
+
+        chatMessageSearchRepository.save(chatMessageIndex);
+//        chatServiceJpa.save(message);
     }
 }

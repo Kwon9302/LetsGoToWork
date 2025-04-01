@@ -5,33 +5,34 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.IndexDirection;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.index.TextIndexed;
+import org.springframework.data.mongodb.core.index.*;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import java.time.LocalDateTime;
 
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(collection = "chatmessages") // MongoDB에서 해당 Collection을 사용한다.
+@Document(collection = "chatmessages")
+@CompoundIndexes({
+        @CompoundIndex(name = "chatroom_content_idx", def = "{'chatroomId': 1, 'content': 'text'}")
+})
 @Builder
 public class ChatMessage {
 
-    @Id
+    @MongoId
     private String id;
+
+    @Indexed
     private String chatroomId; // 어느 채팅방의 메시지인지 참조
 
-    // sender에 인덱스 추가 (사용자별 검색 최적화)
-    @Indexed
     private String sender;
 
 //    @Indexed
     @TextIndexed
     private String content;
 
-    @Indexed(direction = IndexDirection.DESCENDING)
     private LocalDateTime timestamp;
     private String fileUrl; // S3에 저장된 첨부파일 URL
 }

@@ -1,5 +1,6 @@
 package com.cos.nginxkafka.chatController;
 
+import com.cos.nginxkafka.KafkaProducer;
 import com.cos.nginxkafka.dto.ChatRequestDTO;
 import com.cos.nginxkafka.jpaService.ChatServiceJpa;
 import com.cos.nginxkafka.service.ChatService;
@@ -26,15 +27,34 @@ import java.util.Map;
 public class ChatSaveController {
     private final ChatService chatService;
     private final ChatServiceJpa chatServiceJpa;
+    private final KafkaProducer kafkaProducer;
 
+    /**
+     * MongoDB 채팅 저장
+     * @param message
+     */
     @PostMapping("/save/message/mongo")
     public void saveMessageByMongoDB(@RequestBody ChatRequestDTO message) {
         chatService.addMessage(message); // MongoDB 저장
     }
 
+    /**
+     * MySQL 채팅 저장
+     * @param message
+     */
     @PostMapping("/save/message/mysql")
     public void saveMessageByMysql(@RequestBody ChatRequestDTO message) {
         chatServiceJpa.save(message); // MySQL 저장
+    }
+
+    /**
+     * MySQL 채팅 저장(Kafka)
+     * @param message
+     */
+    @PostMapping("/save/message/mysql2")
+    public void saveMessageByMysql2(@RequestBody ChatRequestDTO message) {
+        String topic = "test-topic";
+        kafkaProducer.sendMessage(topic, message.getContent(), message.getSender(), message.getChatroomId());
     }
 
     /**

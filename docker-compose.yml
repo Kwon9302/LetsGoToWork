@@ -1,6 +1,10 @@
 networks:
   my_network:
     driver: bridge
+  k6:
+    driver: bridge
+  grafana:
+    driver: bridge
 
 services:
   # Elasticsearch 서비스 추가
@@ -81,6 +85,8 @@ services:
     depends_on:
       - springboot1
       - springboot2
+      - springboot3
+
     networks:
       - my_network
 
@@ -133,6 +139,112 @@ services:
     networks:
       - my_network
 
+  # Spring Boot 서비스 3
+  springboot3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: springboot3
+    ports:
+      - "8083:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/sys
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=1234
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy  # Elasticsearch가 정상 실행된 후 실행
+      kafka:
+        condition: service_started  # Kafka 컨테이너가 시작된 후 실행
+    networks:
+      - my_network
+#  # Spring Boot 서비스 4
+#  springboot4:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    container_name: springboot4
+#    ports:
+#      - "8084:8080"
+#    environment:
+#      - SPRING_PROFILES_ACTIVE=prod
+#      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+#      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/sys
+#      - SPRING_DATASOURCE_USERNAME=root
+#      - SPRING_DATASOURCE_PASSWORD=1234
+#    extra_hosts:
+#      - "host.docker.internal:host-gateway"
+#    depends_on:
+#      elasticsearch:
+#        condition: service_healthy  # Elasticsearch가 정상 실행된 후 실행
+#      kafka:
+#        condition: service_started  # Kafka 컨테이너가 시작된 후 실행
+#    networks:
+#      - my_network
+#
+#  # Spring Boot 서비스 5
+#  springboot5:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    container_name: springboot5
+#    ports:
+#      - "8085:8080"
+#    environment:
+#      - SPRING_PROFILES_ACTIVE=prod
+#      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+#      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/sys
+#      - SPRING_DATASOURCE_USERNAME=root
+#      - SPRING_DATASOURCE_PASSWORD=1234
+#    extra_hosts:
+#      - "host.docker.internal:host-gateway"
+#    depends_on:
+#      elasticsearch:
+#        condition: service_healthy  # Elasticsearch가 정상 실행된 후 실행
+#      kafka:
+#        condition: service_started  # Kafka 컨테이너가 시작된 후 실행
+#    networks:
+#      - my_network
+
+  influxdb:
+    image: influxdb:1.8
+    networks:
+      - k6
+      - grafana
+    ports:
+      - "8086:8086"
+    environment:
+      - INFLUXDB_DB=k6
+
+  grafana:
+    image: grafana/grafana:9.3.8
+    networks:
+      - grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_BASIC_ENABLED=false
+    volumes:
+      - ./grafana:/etc/grafana/provisioning/
+
+  k6:
+    image: grafana/k6:latest
+    networks:
+      - k6
+      - my_network
+    ports:
+      - "6565:6565"
+    environment:
+      - K6_OUT=influxdb=http://influxdb:8086/k6
+    volumes:
+      - ./scripts/k6-test.js:/scripts/k6-test.js:ro
+
 volumes:
-  mongo_data:
   elasticsearch_data:
+

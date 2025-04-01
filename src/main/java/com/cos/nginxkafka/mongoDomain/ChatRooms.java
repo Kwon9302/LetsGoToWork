@@ -15,7 +15,7 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(collection = "chatrooms") // MongoDB에서 해당 Collection을 사용한다.
+@Document(collection = "chatrooms")
 @Builder
 public class ChatRooms {
 
