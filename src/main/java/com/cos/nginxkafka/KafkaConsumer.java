@@ -1,8 +1,8 @@
 package com.cos.nginxkafka;
 
 import com.cos.nginxkafka.dto.ChatRequestDTO;
-import com.cos.nginxkafka.es.ChatMessageIndex;
-import com.cos.nginxkafka.esRepository.ChatMessageSearchRepository;
+//import com.cos.nginxkafka.es.ChatMessageIndex;
+//import com.cos.nginxkafka.esRepository.ChatMessageSearchRepository;
 import com.cos.nginxkafka.jpaService.ChatServiceJpa;
 import com.cos.nginxkafka.service.ChatService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,7 +21,7 @@ import java.time.OffsetDateTime;
 public class KafkaConsumer {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final ChatService chatService;
-    private final ChatMessageSearchRepository chatMessageSearchRepository;
+//    private final ChatMessageSearchRepository chatMessageSearchRepository;
 
     /**
      * 채팅 전송
@@ -48,14 +48,14 @@ public class KafkaConsumer {
     @KafkaListener(topics = "test-topic", groupId = "chat-group-save", concurrency = "3")
     public void consumeMessage(@Payload ChatRequestDTO message) {
             chatService.addMessage(message);
-        ChatMessageIndex chatMessageIndex = ChatMessageIndex.builder()
-                .chatroomId(message.getChatroomId())
-                .sender(message.getSender())
-                .content(message.getContent())
-                .timestamp(OffsetDateTime.now())
-                .build();
-
-        chatMessageSearchRepository.save(chatMessageIndex);
+//        ChatMessageIndex chatMessageIndex = ChatMessageIndex.builder()
+//                .chatroomId(message.getChatroomId())
+//                .sender(message.getSender())
+//                .content(message.getContent())
+//                .timestamp(OffsetDateTime.now())
+//                .build();
+//
+//        chatMessageSearchRepository.save(chatMessageIndex);
 //        chatServiceJpa.save(message);
     }
 }

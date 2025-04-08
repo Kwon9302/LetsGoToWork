@@ -1,7 +1,7 @@
 package com.cos.nginxkafka.chatController;
 
 import com.cos.nginxkafka.KafkaProducer;
-import com.cos.nginxkafka.es.ChatMessageIndex;
+//import com.cos.nginxkafka.es.ChatMessageIndex;
 import com.cos.nginxkafka.dto.ChatRequestDTO;
 import com.cos.nginxkafka.jpaEntity.ChatEntity;
 import com.cos.nginxkafka.jpaService.ChatServiceJpa;
@@ -159,14 +159,14 @@ public class ChatController {
      * @param keyword
      * @return
      */
-    @GetMapping("/search/chat")
-    public ResponseEntity<List<ChatMessageIndex>> searchMessages(@RequestParam String keyword) {
-
-        String chatroomId = "123";
-        List<ChatMessageIndex> results = chatService.searchChatMessages(chatroomId, keyword);
-        log.info("검색된 ES 채팅 데이터 수 : {}", results.size());
-        return ResponseEntity.ok(results);
-    }
+//    @GetMapping("/search/chat")
+//    public ResponseEntity<List<ChatMessageIndex>> searchMessages(@RequestParam String keyword) {
+//
+//        String chatroomId = "123";
+//        List<ChatMessageIndex> results = chatService.searchChatMessages(chatroomId, keyword);
+//        log.info("검색된 ES 채팅 데이터 수 : {}", results.size());
+//        return ResponseEntity.ok(results);
+//    }
 
     /**
      * Mongodb를 이용한 채팅 검색

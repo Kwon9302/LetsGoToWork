@@ -60,14 +60,14 @@ public class ChatSaveController {
     /**
      * 파일저장 메서드
      */
-    @PostMapping("/save/file")
-    public ResponseEntity<Map<String, String>> saveFile(@Payload ChatRequestDTO chatRequestDTO,
-                                                        @RequestBody MultipartFile file) throws IOException {
-        String fileUrl = chatService.saveFile(chatRequestDTO, file);
-        Map<String, String> response = new HashMap<>();
-        response.put("url", fileUrl);
-        return ResponseEntity.ok(response);
-    }
+//    @PostMapping("/save/file")
+//    public ResponseEntity<Map<String, String>> saveFile(@Payload ChatRequestDTO chatRequestDTO,
+//                                                        @RequestBody MultipartFile file) throws IOException {
+//        String fileUrl = chatService.saveFile(chatRequestDTO, file);
+//        Map<String, String> response = new HashMap<>();
+//        response.put("url", fileUrl);
+//        return ResponseEntity.ok(response);
+//    }
 
 
 }
