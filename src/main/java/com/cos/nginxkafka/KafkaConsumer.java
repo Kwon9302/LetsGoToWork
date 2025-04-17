@@ -6,9 +6,12 @@ import com.cos.nginxkafka.esRepository.ChatMessageSearchRepository;
 import com.cos.nginxkafka.jpaService.ChatServiceJpa;
 import com.cos.nginxkafka.service.ChatService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -27,8 +30,7 @@ public class KafkaConsumer {
      * 채팅 전송
      * @param message
      */
-    @KafkaListener(topics = "test-topic", groupId = "chat-send", concurrency = "3",
-            properties = {"max.poll.interval.ms=30000"})
+    @KafkaListener(topics = "test-topic", groupId = "chat-send", concurrency = "3", properties = {"max.poll.interval.ms=30000"})
     public void consumeEsMessage(@Payload ChatRequestDTO message) {
         log.info("Received message: " + message);
 
@@ -41,12 +43,14 @@ public class KafkaConsumer {
         }
     }
 
+
     /**
      * 채팅 저장 Consumer
      * @param message
      */
+    @Transactional
     @KafkaListener(topics = "test-topic", groupId = "chat-group-save", concurrency = "3")
-    public void consumeMessage(@Payload ChatRequestDTO message) {
+    public void consumeMessage(@Payload ChatRequestDTO message, Acknowledgment ack) {
             chatService.addMessage(message);
         ChatMessageIndex chatMessageIndex = ChatMessageIndex.builder()
                 .chatroomId(message.getChatroomId())
@@ -57,5 +61,7 @@ public class KafkaConsumer {
 
         chatMessageSearchRepository.save(chatMessageIndex);
 //        chatServiceJpa.save(message);
+
+        ack.acknowledge();
     }
 }

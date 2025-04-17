@@ -21,8 +21,17 @@ public class KafkaProducer {
             message.setSender(senderId);
             message.setChatroomId(chatroomId);
 
+            String key = "chat";
             log.info("Sent Kafka message(KafkaProducer): {}", message);
-            kafkaTemplate.send(topic, message);
+            kafkaTemplate.send(topic, key ,message)
+                    .whenComplete((msg, throwable) -> {
+                        if (throwable != null) {
+                            log.error("메시지 전송 실패", throwable);
+                            kafkaTemplate.send("message.DLT", key, message);
+                        } else {
+                            log.info("메시지 전송 성공! offset={}", msg.getRecordMetadata().offset());
+                        }
+                    });
         } catch (Exception e) {
             log.error("Error sending Kafka message", e);
         }

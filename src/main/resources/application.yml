@@ -21,7 +21,7 @@ spring:
   kafka:
     bootstrap-servers: kafka:9092  # Kafka 서버 주소
     consumer:
-      group-id: "#{T(java.util.UUID).randomUUID().toString()}"
+
       auto-offset-reset: earliest  # 가장 오래된 메시지부터 읽기
       properties:
         spring.json.trusted.packages: "*"
@@ -30,7 +30,8 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      acks: all  # 메시지가 정상적으로 수신되었을 때만 확인
+      acks: all  # ✅ Broker가 모든 Replica에 복제되었을 때만 ack
+      retries: 3             # ❌ 전송 실패 시 재시도 횟수
 
   datasource:
     url: jdbc:mysql://host.docker.internal:3306/sys
