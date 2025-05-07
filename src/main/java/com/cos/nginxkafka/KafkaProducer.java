@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -16,10 +18,12 @@ public class KafkaProducer {
 
     public void sendMessage(String topic, String content, String senderId, String chatroomId) {
         try {
-            ChatRequestDTO message = new ChatRequestDTO();
-            message.setContent(content);
-            message.setSender(senderId);
-            message.setChatroomId(chatroomId);
+            ChatRequestDTO message = new ChatRequestDTO().builder()
+                    .content(content)
+                    .sender(senderId)
+                    .chatroomId(chatroomId)
+                    .timestamp(LocalDateTime.now())
+                    .build();
 
             String key = "chat";
             log.info("Sent Kafka message(KafkaProducer): {}", message);

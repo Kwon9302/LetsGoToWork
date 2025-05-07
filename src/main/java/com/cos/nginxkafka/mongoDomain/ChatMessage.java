@@ -29,8 +29,6 @@ public class ChatMessage {
 
     private String sender;
 
-//    @Indexed
-    @TextIndexed
     private String content;
 
     private LocalDateTime timestamp;

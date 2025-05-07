@@ -30,12 +30,12 @@ public class DownloadController {
     /**
      * ✅ 파일 다운로드 API
      */
-    @GetMapping("/download")
-    public ResponseEntity<Map<String, String>> generatePresignedUrl(@RequestParam("fileUrl") String fileUrl) {
-        String presignedUrl = chatService.getFileDownloadUrl(fileUrl);
-        Map<String, String> response = new HashMap<>();
-        response.put("url", presignedUrl);
-        return ResponseEntity.ok(response);
-    }
+//    @GetMapping("/download")
+//    public ResponseEntity<Map<String, String>> generatePresignedUrl(@RequestParam("fileUrl") String fileUrl) {
+//        String presignedUrl = chatService.getFileDownloadUrl(fileUrl);
+//        Map<String, String> response = new HashMap<>();
+//        response.put("url", presignedUrl);
+//        return ResponseEntity.ok(response);
+//    }
 
 }

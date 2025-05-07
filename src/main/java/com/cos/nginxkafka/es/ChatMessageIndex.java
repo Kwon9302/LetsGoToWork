@@ -10,7 +10,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.time.OffsetDateTime;
 
-@Document(indexName = "chatmessages")
+@Document(indexName = "chatmessages", createIndex = false)
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor

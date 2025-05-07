@@ -1,10 +1,10 @@
 networks:
   my_network:
     driver: bridge
-  k6:
-    driver: bridge
-  grafana:
-    driver: bridge
+#  k6:
+#    driver: bridge
+#  grafana:
+#    driver: bridge
 
 services:
   # Elasticsearch 서비스 추가
@@ -60,7 +60,6 @@ services:
       #	 클라이언트(Publisher, Consumer) → 9092에서 접속
       #	 Kafka 브로커 내부 통신(컨트롤러) → 9093에서 통신
       KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093
-
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092 # Kafka 브로커가 외부에서 접근할 수 있도록 9092 포트 광고
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT # Kafka 브로커 간 통신을 PLAINTEXT(암호화 X) 방식으로 설정
       KAFKA_LOG_DIRS: /var/lib/kafka/data # Kafka의 데이터를 저장할 디렉토리 지정 (/var/lib/kafka/data)
@@ -74,6 +73,7 @@ services:
 
 #    volumes:
 #      - kafka_data:/var/lib/kafka/data
+
   # Nginx (로드밸런서)
   nginx:
     image: nginx:latest
@@ -210,40 +210,40 @@ services:
 #    networks:
 #      - my_network
 
-  influxdb:
-    image: influxdb:1.8
-    networks:
-      - k6
-      - grafana
-    ports:
-      - "8086:8086"
-    environment:
-      - INFLUXDB_DB=k6
-
-  grafana:
-    image: grafana/grafana:9.3.8
-    networks:
-      - grafana
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_BASIC_ENABLED=false
-    volumes:
-      - ./grafana:/etc/grafana/provisioning/
-
-  k6:
-    image: grafana/k6:latest
-    networks:
-      - k6
-      - my_network
-    ports:
-      - "6565:6565"
-    environment:
-      - K6_OUT=influxdb=http://influxdb:8086/k6
-    volumes:
-      - ./scripts/k6-test.js:/scripts/k6-test.js:ro
+#  influxdb:
+#    image: influxdb:1.8
+#    networks:
+#      - k6
+#      - grafana
+#    ports:
+#      - "8086:8086"
+#    environment:
+#      - INFLUXDB_DB=k6
+#
+#  grafana:
+#    image: grafana/grafana:9.3.8
+#    networks:
+#      - grafana
+#    ports:
+#      - "3000:3000"
+#    environment:
+#      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+#      - GF_AUTH_ANONYMOUS_ENABLED=true
+#      - GF_AUTH_BASIC_ENABLED=false
+#    volumes:
+#      - ./grafana:/etc/grafana/provisioning/
+#
+#  k6:
+#    image: grafana/k6:latest
+#    networks:
+#      - k6
+#      - my_network
+#    ports:
+#      - "6565:6565"
+#    environment:
+#      - K6_OUT=influxdb=http://influxdb:8086/k6
+#    volumes:
+#      - ./scripts/k6-test.js:/scripts/k6-test.js:ro
 
 volumes:
   elasticsearch_data:

@@ -30,8 +30,9 @@ public class KafkaConsumer {
      * 채팅 전송
      * @param message
      */
-    @KafkaListener(topics = "test-topic", groupId = "chat-send", concurrency = "3", properties = {"max.poll.interval.ms=30000"})
-    public void consumeEsMessage(@Payload ChatRequestDTO message) {
+
+    @KafkaListener(topics = "test-topic",groupId = "#{T(java.util.UUID).randomUUID().toString()}", concurrency = "3", properties = {"max.poll.interval.ms=30000"})
+    public void consumeMessage(@Payload ChatRequestDTO message) {
         log.info("Received message: " + message);
 
         try {
@@ -50,8 +51,8 @@ public class KafkaConsumer {
      */
     @Transactional
     @KafkaListener(topics = "test-topic", groupId = "chat-group-save", concurrency = "3")
-    public void consumeMessage(@Payload ChatRequestDTO message, Acknowledgment ack) {
-            chatService.addMessage(message);
+    public void consumeEsMessage(@Payload ChatRequestDTO message, Acknowledgment ack) {
+        chatService.addMessage(message);
         ChatMessageIndex chatMessageIndex = ChatMessageIndex.builder()
                 .chatroomId(message.getChatroomId())
                 .sender(message.getSender())
@@ -63,5 +64,6 @@ public class KafkaConsumer {
 //        chatServiceJpa.save(message);
 
         ack.acknowledge();
+        log.info("Received esMessage: " + message);
     }
 }

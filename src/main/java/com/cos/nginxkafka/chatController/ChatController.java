@@ -119,7 +119,7 @@ public class ChatController {
     @GetMapping("/history2/cursor/{chatroomId}")
     public ResponseEntity<List<ChatEntity>> getChatHistory2(@PathVariable String chatroomId,
                                                                @RequestParam(required = false) Long lastMessageId) {
-        int pageSize = 100;
+        int pageSize = 20;
         List<ChatEntity> chatHistory = chatServiceJpa.findByChatroomId(chatroomId,lastMessageId,pageSize);
 
         if (chatHistory == null || chatHistory.isEmpty()) {
@@ -139,7 +139,7 @@ public class ChatController {
     public ResponseEntity<List<ChatMessage>> getChatHistory222(@PathVariable String chatroomId,
                                                                @RequestParam(required = false) String lastTime
                                                                ){
-        int pageSize = 1000;
+        int pageSize = 20;
 
         // lastTime이 null이면 첫 페이지 요청으로 간주
         LocalDateTime cursor = null;
@@ -174,9 +174,9 @@ public class ChatController {
      * @return
      */
     @GetMapping("/search/chat/mongo")
-        public ResponseEntity<List<ChatMessage>> searchMessagesMongo(@RequestParam String keyword) {
+        public ResponseEntity<List<ChatMessageIndex>> searchMessagesMongo(@RequestParam String keyword) {
         String chatroomId = "123";
-        List<ChatMessage> results = chatService.searchChat(chatroomId, keyword);
+        List<ChatMessageIndex> results = chatService.searchChatMessages(chatroomId, keyword);
         log.info("검색된 Mongo 채팅 데이터 수 : {}", results.size());
         return ResponseEntity.ok(results);
     }
