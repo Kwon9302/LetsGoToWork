@@ -1,27 +1,56 @@
 package com.cos.nginxkafka.advice;
 
-import com.cos.nginxkafka.error.ErrorResponse;
-import com.cos.nginxkafka.error.GlobalException;
+import com.cos.nginxkafka.exception.*;
+import com.cos.nginxkafka.util.ApiErrorCodeEnum;
+import com.cos.nginxkafka.util.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.context.request.NativeWebRequest;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(GlobalException.class)
-    public Object handleGlobal(GlobalException ex, NativeWebRequest req) {
-        log.error("[{}] {}", ex.getErrorCode().name(), ex.getMessage(), ex);
+    @ExceptionHandler(FailedSendMessageException.class)
+    public ResponseEntity<ErrorResponse> failedSendMessage(FailedSendMessageException ex) {
+        log.error("[EXCEPTION_MESSAGE] {}", ex.getMessage(), ex);
+        return build(ApiErrorCodeEnum.FAILED_SEND_MESSAGE);
+    }
 
-        if (req.getHeader("sec-websocket-key") != null) return null; // WS 는 개별 advice 처리
-        if (req.getNativeRequest() instanceof jakarta.servlet.http.HttpServletRequest) {
-            return ResponseEntity.status(ex.getErrorCode().getHttpStatus())
-                    .body(new ErrorResponse(ex.getErrorCode()));
-        }
+    @ExceptionHandler(FailedSaveMessageException.class)
+    public ResponseEntity<ErrorResponse> handleFailedSaveMessage(FailedSaveMessageException ex) {
+        log.error("[EXCEPTION_MESSAGE] {}", ex.getMessage(), ex);
+        return build(ApiErrorCodeEnum.FAILED_SAVE_MESSAGE);
+    }
 
-        throw ex;
+    @ExceptionHandler(ChatRoomNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleChatRoomNotFound(ChatRoomNotFoundException ex) {
+        log.error("[EXCEPTION_MESSAGE] {}", ex.getMessage(), ex);
+        return build(ApiErrorCodeEnum.CHATROOM_NOT_FOUND);
+    }
+
+    @ExceptionHandler(KafkaSendFailedException.class)
+    public ResponseEntity<ErrorResponse> handleKafkaSendFailed(KafkaSendFailedException ex) {
+        log.error("[EXCEPTION_MESSAGE] {}", ex.getMessage(), ex);
+        return build(ApiErrorCodeEnum.KAFKA_SEND_FAILED);
+    }
+
+    @ExceptionHandler(MongoSaveFailedException.class)
+    public ResponseEntity<ErrorResponse> handleMongoSaveFailed(MongoSaveFailedException ex) {
+        log.error("[EXCEPTION_MESSAGE] {}", ex.getMessage(), ex);
+        return build(ApiErrorCodeEnum.MONGODB_SAVE_FAILED);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
+        log.error("[INTERNAL_SERVER_ERROR] {}", ex.getMessage(), ex);
+        return build(ApiErrorCodeEnum.INTERNAL_SERVER_ERROR);
+    }
+
+    private ResponseEntity<ErrorResponse> build(ApiErrorCodeEnum code) {
+        return ResponseEntity.status(code.getHttpStatus())
+                .body(new ErrorResponse(code));
     }
 }

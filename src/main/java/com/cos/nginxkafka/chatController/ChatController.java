@@ -1,6 +1,6 @@
 package com.cos.nginxkafka.chatController;
 
-import com.cos.nginxkafka.KafkaProducer;
+import com.cos.nginxkafka.service.kafkaService.KafkaProducer;
 import com.cos.nginxkafka.es.ChatMessageIndex;
 import com.cos.nginxkafka.dto.ChatRequestDTO;
 import com.cos.nginxkafka.jpaEntity.ChatEntity;
@@ -12,18 +12,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -62,6 +57,7 @@ public class ChatController {
         // 예시: timestamp 기준 내림차순 정렬 (최신 메시지가 먼저 나오도록)
         Pageable pageable = PageRequest.of(page, size);
         Page<ChatMessage> messages = chatService.getMessages(chatroomId, pageable);
+
         return ResponseEntity.ok(messages);
     }
 

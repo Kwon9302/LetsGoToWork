@@ -10,7 +10,6 @@ public class MessageController {
 
     @GetMapping("/")
     public String index() {
-        
         return "index";
     }
 
@@ -21,7 +20,6 @@ public class MessageController {
 
     @GetMapping("/search")
     public String searchPage() {
-
         return "search";
     }
 }

@@ -54,6 +54,8 @@ dependencies {
     implementation 'software.amazon.awssdk:s3:2.20.120'  // 최신 버전 확인 후 사용
     implementation 'software.amazon.awssdk:sts:2.20.120'
 
+    // logstash
+    implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
 }
 
 tasks.named('test') {

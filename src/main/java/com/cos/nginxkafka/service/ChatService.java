@@ -1,23 +1,23 @@
 package com.cos.nginxkafka.service;
 
-import com.cos.nginxkafka.KafkaProducer;
+import com.cos.nginxkafka.exception.ChatRoomNotFoundException;
+import com.cos.nginxkafka.exception.MongoSaveFailedException;
+import com.cos.nginxkafka.service.kafkaService.KafkaProducer;
 import com.cos.nginxkafka.es.ChatMessageIndex;
 import com.cos.nginxkafka.dto.ChatRequestDTO;
-import com.cos.nginxkafka.jpaEntity.ChatEntity;
 import com.cos.nginxkafka.mongoDomain.ChatMessage;
 import com.cos.nginxkafka.mongoRepository.ChatMessageRepositoryCustom;
 import com.cos.nginxkafka.mongoDomain.ChatRooms;
 import com.cos.nginxkafka.esRepository.ChatMessageSearchRepository;
 import com.cos.nginxkafka.mongoRepository.ChatMessageRepository;
 import com.cos.nginxkafka.mongoRepository.ChatRoomRepository;
+import com.cos.nginxkafka.util.ApiErrorCodeEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -54,7 +54,9 @@ public class ChatService {
      */
     public void addMessage(ChatRequestDTO chatRequestDTO) {
         // 채팅방이 없으면 생성
-        getOrCreateChatRoom(chatRequestDTO.getChatroomId());
+        if (!chatRoomRepository.existsById(chatRequestDTO.getChatroomId())) {
+            throw new ChatRoomNotFoundException(ApiErrorCodeEnum.CHATROOM_NOT_FOUND);
+        }
 
         // 🔹 Builder 패턴을 사용하여 객체 생성
         ChatMessage chatMessage = ChatMessage.builder()
@@ -81,7 +83,7 @@ public class ChatService {
             chatMessageSearchRepository.save(indexMessage);
             log.info("✅ [ChatService (MongoDB)] Successfully saved message: {}", chatMessage);
         } catch (Exception e) {
-            log.error("ChatService : MongoDB 메시지 저장 실패", e);
+            throw new MongoSaveFailedException(ApiErrorCodeEnum.MONGODB_SAVE_FAILED);
         }
     }
 

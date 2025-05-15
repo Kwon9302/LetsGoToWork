@@ -1,10 +1,10 @@
-package com.cos.nginxkafka;
+package com.cos.nginxkafka.service.kafkaService;
 
+import com.cos.nginxkafka.exception.KafkaSendFailedException;
+import com.cos.nginxkafka.util.ApiErrorCodeEnum;
 import lombok.extern.slf4j.Slf4j;
 import com.cos.nginxkafka.dto.ChatRequestDTO;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -30,8 +30,9 @@ public class KafkaProducer {
             kafkaTemplate.send(topic, key ,message)
                     .whenComplete((msg, throwable) -> {
                         if (throwable != null) {
-                            log.error("메시지 전송 실패", throwable);
+
                             kafkaTemplate.send("message.DLT", key, message);
+                            throw new KafkaSendFailedException(ApiErrorCodeEnum.KAFKA_SEND_FAILED);
                         } else {
                             log.info("메시지 전송 성공! offset={}", msg.getRecordMetadata().offset());
                         }

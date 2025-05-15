@@ -7,6 +7,29 @@ networks:
 #    driver: bridge
 
 services:
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:7.17.10
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - ./spring-app/logs:/usr/share/filebeat/logs
+    depends_on:
+      - logstash
+    networks:
+      - my_network
+
+  logstash:
+    build:
+      context: .
+      dockerfile: logstash/Dockerfile
+    ports:
+      - "5044:5044"
+      - "9600:9600"
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+      - ./logstash/config:/usr/share/logstash/config
+    networks:
+      - my_network
+
   # Elasticsearch 서비스 추가
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.17.2
@@ -92,6 +115,8 @@ services:
 
   # Spring Boot 서비스 1
   springboot1:
+    volumes:
+      - ./spring-app/logs:/app/logs
     build:
       context: .
       dockerfile: Dockerfile
@@ -117,6 +142,8 @@ services:
 
   # Spring Boot 서비스 2
   springboot2:
+    volumes:
+      - ./spring-app/logs:/app/logs
     build:
       context: .
       dockerfile: Dockerfile
@@ -141,6 +168,8 @@ services:
 
   # Spring Boot 서비스 3
   springboot3:
+    volumes:
+      - ./spring-app/logs:/app/logs
     build:
       context: .
       dockerfile: Dockerfile

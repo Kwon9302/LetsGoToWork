@@ -1,15 +1,12 @@
-package com.cos.nginxkafka;
+package com.cos.nginxkafka.service.kafkaService;
 
 import com.cos.nginxkafka.dto.ChatRequestDTO;
 import com.cos.nginxkafka.es.ChatMessageIndex;
 import com.cos.nginxkafka.esRepository.ChatMessageSearchRepository;
-import com.cos.nginxkafka.jpaService.ChatServiceJpa;
 import com.cos.nginxkafka.service.ChatService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.messaging.handler.annotation.Payload;
