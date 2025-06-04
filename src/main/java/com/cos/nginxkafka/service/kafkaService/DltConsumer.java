@@ -18,26 +18,18 @@ public class DltConsumer {
     private final KafkaTemplate<String, ChatRequestDTO> kafkaTemplate;
     private static final int MAX_RETRY = 3;
 
-    @KafkaListener(topics = "message.DLT", groupId = "dlt-handler")
+    @KafkaListener(topics = "message.DLT", groupId = "dlt-handler", errorHandler = "dltErrorHandler")
     public void handleDlt(ChatRequestDTO msg,
                           @Header(KafkaHeaders.DLT_ORIGINAL_TOPIC) String originalTopic,
-                          @Header(KafkaHeaders.DLT_ORIGINAL_PARTITION) int partition,
-                          @Header(KafkaHeaders.DLT_ORIGINAL_OFFSET) long offset,
                           @Header(value = "retry-count", required = false, defaultValue = "0") int retryCnt) {
 
         log.warn("⚠️  DLT 수신: {}, retryCnt={}", msg, retryCnt);
 
-        // ----- 재시도 여부 판단 -----
+        // ----- 재시도 여부 판단(parking-lot 미구현) -----
         if (retryCnt >= MAX_RETRY) {
             log.error("❌ 최대 재시도 초과. parking-lot 으로 이동");
-            kafkaTemplate.send("message.PARKING_LOT", msg.getChatroomId(), msg);
+//            kafkaTemplate.send("message.PARKING_LOT", msg.getChatroomId(), msg);
             return;
-        }
-
-        // ----- back‑off (예: 5초) -----
-        try {
-            Thread.sleep(5_000);
-        } catch (InterruptedException ignored) {
         }
 
         Message<ChatRequestDTO> retryMessage = MessageBuilder

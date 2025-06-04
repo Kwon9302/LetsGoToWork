@@ -34,7 +34,7 @@ public class ChatController {
      */
     @MessageMapping("/sendMessage")
     public void sendMessage(@Payload ChatRequestDTO message) {
-        log.info("📩 [ChatController] Received message(chatController): Sender={}, ChatroomId={}, Content={}",
+        log.error("📩 [ChatController] Received message(chatController): Sender={}, ChatroomId={}, Content={}",
                 message.getSender(), message.getChatroomId(), message.getContent());
 
         String topic = "test-topic";
